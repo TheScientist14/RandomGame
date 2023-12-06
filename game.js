@@ -1,58 +1,55 @@
-const input = document.getElementById("input")
 const frame = document.getElementById("randomGame")
+const seedDisplay = document.getElementById("seed")
 
-function buildWorld(iWorldDim) {
-    const localWorld = []
-    for (let yy = 0; yy < iWorldDim[1]; yy++) {
+const rand = new Random(Math.floor(Math.random() * 10000000000000).toString())
+
+const worldDim = [50, 50]
+const world = []
+
+const viewportDim = [20, 10]
+const playerPos = [1, 1]
+
+function nope(e) {
+    e.preventDefault()
+    return false
+}
+
+frame.addEventListener("keydown", processEvent);
+frame.addEventListener("cut", nope);
+frame.addEventListener("paste", nope);
+frame.addEventListener("input", nope);
+
+function focusGame(e) {
+    frame.focus()
+}
+focusGame()
+
+//#region world
+
+function buildWorld(iSeed) {
+    seedDisplay.textContent = '"' + rand.seedTxt + '"'
+    world.length = 0
+    for (let yy = 0; yy < worldDim[1]; yy++) {
         let line = []
-        for (let xx = 0; xx < iWorldDim[0]; xx++) {
-            if (xx == 0 || yy == 0 || xx == iWorldDim[0] - 1 || yy == iWorldDim[1] - 1)
+        for (let xx = 0; xx < worldDim[0]; xx++) {
+            if (xx == 0 || yy == 0 || xx == worldDim[0] - 1 || yy == worldDim[1] - 1)
                 line.push('#')
             else
                 line.push('.')
         }
-        localWorld.push(line)
+        world.push(line)
     }
-    return localWorld
-}
 
-const worldDim = [20, 30]
-const viewportDim = [15, 10]
-const world = buildWorld(worldDim)
-const playerPos = [4, 4]
-world[1][1] = '<span style="color: red">#</span>'
-
-function focusGame(e) {
-    input.focus()
-}
-input.addEventListener("keydown", processEvent);
-input.addEventListener("focusout", focusGame);
-
-focusGame()
-printWorld()
-
-function processEvent(e) {
-    switch (e.key) {
-        case "ArrowDown":
-            playerPos[1] += 1
-            break
-        case "ArrowUp":
-            playerPos[1] -= 1
-            break
-        case "ArrowLeft":
-            playerPos[0] -= 1
-            break
-        case "ArrowRight":
-            playerPos[0] += 1
-            break
-    }
-    console.log(playerPos)
-
+    generateChests(iSeed)
     printWorld()
 }
 
-function isCoordsValid(iCoords, iWorldDim) {
-    return iCoords[0] >= 0 && iCoords[0] < iWorldDim[0] && iCoords[1] >= 0 && iCoords[1] < iWorldDim[1]
+function generateChests(iSeed) {
+
+}
+
+function isCoordsValid(iCoords) {
+    return iCoords[0] >= 0 && iCoords[0] < worldDim[0] && iCoords[1] >= 0 && iCoords[1] < worldDim[1]
 }
 
 function printWorld() {
@@ -66,8 +63,7 @@ function printWorld() {
             }
 
             if (!isCoordsValid([xx, yy], worldDim)) {
-                console.log("empty " + xx + "," + yy)
-                line += " "
+                line += " "
             }
             else
                 line += world[yy][xx]
@@ -77,3 +73,80 @@ function printWorld() {
 
     frame.innerHTML = lines.join('<br>')
 }
+
+buildWorld()
+
+function processEvent(e) {
+    e.preventDefault();
+    switch (e.key) {
+        case "ArrowDown":
+            movePlayer([0, 1])
+            break
+        case "ArrowUp":
+            movePlayer([0, -1])
+            break
+        case "ArrowLeft":
+            movePlayer([-1, 0])
+            break
+        case "ArrowRight":
+            movePlayer([1, 0])
+            break
+        case "e":
+            interact()
+            break
+        case "h":
+            displayHint()
+            break
+        case "v":
+            readSeed()
+            break
+        case "c":
+            if (e.ctrlKey)
+                copySeed()
+            break
+    }
+}
+
+function movePlayer(iDelta) {
+    let tmpPlayerPos = [playerPos[0] + iDelta[0], playerPos[1] + iDelta[1]]
+    if (!isCoordsValid(tmpPlayerPos))
+        return false
+
+    if (world[tmpPlayerPos[1]][tmpPlayerPos[0]] == ".") {
+        playerPos[0] = tmpPlayerPos[0]
+        playerPos[1] = tmpPlayerPos[1]
+        printWorld()
+        return true
+    }
+    return false
+}
+
+function interact() {
+
+}
+
+function displayHint() {
+
+}
+
+function readSeed() {
+    let promtSeed = prompt("Enter your seed:");
+    if (promtSeed != null && promtSeed != "") {
+        rand.setSeed(promtSeed)
+        buildWorld()
+    }
+}
+
+function copySeed() {
+    navigator.clipboard.writeText(rand.seedTxt);
+    alert("Copied the seed");
+}
+
+
+// wall: █
+// space: .
+// player: O
+// closed door: #
+// opened chest: ∠
+// closed chest: Δ
+// key: ю

@@ -1,30 +1,30 @@
 #randomGame {
     font-family: monospace;
+    width: max-content;
+    /* centering */
+    margin-left: auto;
+    margin-right: auto;
+    border: dotted 2px black;
+    border-radius: 2px;
+    font-stretch: expanded;
+    caret-color: transparent;
 }
 
-input {
-    opacity: 0%;
+#randomGame:focus {
+    caret-color: transparent;
+    border-radius: 2px;
 }
 
-.button-shortcut
-{
+.button-shortcut {
     width: 80px;
     margin-bottom: 10px;
     font-weight: bold;
 }
 
-.copy-seed {
-    
-}
+.copy-seed {}
 
-.paste-seed {
-    
-}
+.paste-seed {}
 
-.show-hint {
-    
-}
+.show-hint {}
 
-.interact {
-
-}
+.interact {}
