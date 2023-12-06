@@ -5,3 +5,26 @@
 input {
     opacity: 0%;
 }
+
+.button-shortcut
+{
+    width: 80px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.copy-seed {
+    
+}
+
+.paste-seed {
+    
+}
+
+.show-hint {
+    
+}
+
+.interact {
+
+}
