@@ -10,22 +10,35 @@
     caret-color: transparent;
 }
 
+.keyContainer {
+    display: flex;
+    border: solid 2px black;
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    justify-content: space-around;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
 #randomGame:focus {
     caret-color: transparent;
     border-radius: 2px;
 }
 
 .button-shortcut {
-    width:max-content;
-    margin-left: auto;
-    margin-right: auto;
+    display:flex;
+    margin-left: 30%;
+    margin-right: 30%;
     font-weight: bold;
+    justify-content: space-evenly;
 }
 
-.copySeed {}
+#copySeed {}
 
-.pasteSeed {}
+#pasteSeed {}
 
-.showHint {}
+#showHint {}
 
-.interact {}
+#interact {}
