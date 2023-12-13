@@ -9,15 +9,30 @@ const keysDisplay = document.getElementById("keyContainer")
 
 const rand = new Random(Math.floor(Math.random() * 10000000000000).toString())
 
+const allDir = [[1, 0], [0, -1], [-1, 0], [0, 1]]
+const allColors = [...Array(10).keys()];
+
 const worldDim = [51, 51]
+const maxChestPerRoom = 3
+const nbColor = 10
 const world = []
-const objectStates = null // (color => (chest, door))
-const keys = new Set([0, 6, 1])
+const colorGraph = [...Array(nbColor).fill([])] // (color => colorDependencies)
+const chestRoomToColor = []
+var endColor = null
+var possibleSolution = null
+const keys = new Set()
+
+// room = (door, center)
+const endRoom = [[25, 20], [25, 25]]
+const chestRooms = [
+    [[15, 10], [15, 5]], [[25, 10], [25, 5]], [[35, 10], [35, 5]],
+    [[10, 15], [5, 15]], [[10, 25], [5, 25]], [[10, 35], [5, 35]],
+    [[15, 40], [15, 45]], [[25, 40], [25, 45]], [[35, 40], [35, 45]],
+    [[40, 15], [45, 15]], [[40, 25], [45, 25]], [[40, 35], [45, 35]]
+]
 
 const viewportDim = [20, 10]
 const playerPos = [15, 15]
-
-const allDir = [[1, 0], [0, -1], [-1, 0], [0, 1]]
 
 const voidSpace = " "
 const wall = "█"
@@ -27,6 +42,7 @@ const closedDoor = "#"
 const openedChest = "Λ"
 const closedChest = "A"
 const key = "ю"
+const star = "*"
 
 class DoorCell {
     constructor(iLockColors) {
@@ -34,7 +50,7 @@ class DoorCell {
     }
 
     toString() {
-        if (this.lockColors.length == 0)
+        if (this.lockColors == null || this.lockColors.length == 0)
             return space
         return `<span class="col${this.lockColors[0]}">${closedDoor}</span>`
     }
@@ -95,9 +111,12 @@ interactButton.addEventListener("click", interact)
 
 //#region world
 
-function buildWorld(iSeed) {
-    seedDisplay.textContent = '"' + rand.seedTxt + '"'
+function buildWorld() {
     world.length = 0
+    keys.clear()
+
+    seedDisplay.textContent = '"' + rand.seedTxt + '"'
+
     let roomWidth = Math.floor(worldDim[0] / 5)
     let roomHeight = Math.floor(worldDim[1] / 5)
     for (let yy = 0; yy < worldDim[1]; yy++) {
@@ -124,12 +143,60 @@ function buildWorld(iSeed) {
         world.push(line)
     }
 
-    generateChests(iSeed)
+    generateColorGraph()
+    // console.log(colorGraph)
+    generateDoors()
+    generateChests()
+    world[endRoom[1][1]][endRoom[1][0]] = star
+
     printWorld()
 }
 
+function generateColorGraph() {
+    let orderedColors = [...allColors]
+    rand.permute(orderedColors)
+    // console.log(orderedColors)
+
+    orderedColors.forEach((col, colIdx) => {
+        let dependencyCandidates = orderedColors.slice(colIdx + 1)
+        let dependencies = []
+        let nbDependencies = rand.getRandomIntBetween(Math.min(1, dependencyCandidates.length), Math.min(dependencyCandidates.length, maxChestPerRoom) + 1)
+        for (let dependencyIdx = 0; dependencyIdx < nbDependencies; dependencyIdx++)
+            if (dependencyIdx == 0)
+                dependencies.push(dependencyCandidates.splice(0, 1)[0])
+            else
+                dependencies.push(rand.popRandomArray(dependencyCandidates))
+        colorGraph[col] = dependencies
+    })
+    endColor = orderedColors[0]
+    orderedColors.reverse()
+    possibleSolution = orderedColors
+}
+
+function placeDoor(iRoom, iRoomColor) {
+    console.log(iRoom)
+    let doorCoord = iRoom[0]
+    let doorColors = colorGraph[iRoomColor]
+    world[doorCoord[1]][doorCoord[0]] = new DoorCell(doorColors)
+}
+
+function generateDoors() {
+    chestRoomToColor.length = 0
+    chestRoomToColor.push(...Array(nbColor).keys())
+    chestRoomToColor.splice(endColor, 1)
+    rand.permute(chestRoomToColor)
+
+    console.log(colorGraph)
+    console.log(chestRoomToColor)
+
+    chestRooms.forEach((room, roomIdx) => {
+        placeDoor(room, chestRoomToColor[roomIdx])
+    })
+    placeDoor(endRoom, endColor)
+}
+
 // #TODO Verify solvability (TU)
-function generateChests(iSeed) {
+function generateChests() {
     world[13][13] = new ChestCell(1)
     world[10][13] = new DoorCell([1])
 }
@@ -162,7 +229,7 @@ function printWorld() {
 }
 
 function updateDisplayKeys() {
-    let textToDisplay = ""
+    let textToDisplay = " "
     keys.forEach(keyVal => {
         textToDisplay += `<div class="col${keyVal}">${key}</div>`
     })
@@ -228,7 +295,6 @@ function interact() {
                     let col = doorColors[colIdx]
                     if (keys.has(col)) {
                         cell.open(col)
-                        keys.delete(col)
                         printWorld()
                     }
                 }

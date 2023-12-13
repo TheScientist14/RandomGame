@@ -6,13 +6,34 @@ class Random {
     // inclusive min, exclusive max
     getRandomIntBetween(iMin, iMax) {
         let min = Math.ceil(iMin);
-        letmax = Math.floor(iMax);
+        let max = Math.floor(iMax);
         return Math.floor(this.rand() * (max - min) + min);
     }
 
     // min = 0, exclusive max
     getRandomIntBelow(iMax) {
         return this.getRandomIntBetween(0, iMax)
+    }
+
+    popRandomArray(iArray) {
+        let idx = this.getRandomIntBelow(iArray.length)
+        return iArray.splice(idx, 1)[0]
+    }
+
+    popRandomArray(iArray) {
+        let idx = this.getRandomIntBelow(iArray.length)
+        return iArray.splice(idx, 1)[0]
+    }
+
+    permute(iArray) {
+        for (let ii = 0; ii < iArray.length - 1; ii++) { // last one can only permutate with itself
+            let permutatedIdx = this.getRandomIntBetween(ii, iArray.length)
+            if (ii == permutatedIdx)
+                continue
+            let permutatedVal = iArray[permutatedIdx]
+            iArray[permutatedIdx] = iArray[ii]
+            iArray[ii] = permutatedVal
+        }
     }
 
     setSeed(iSeed) {
@@ -54,10 +75,28 @@ function mulberry32(a) {
 }
 
 // test random
-// const rand = new Random("test")
-// const nbOccurence = []
+// {
+// let randTest = new Random("test")
+// let nbOccurence = []
 // nbOccurence.length = 10
 // nbOccurence.fill(value = 0, end = 10)
 // for (let ii = 0; ii < 10000; ii++)
-//     nbOccurence[rand.getRandomIntBelow(10)] += 1
+//     nbOccurence[randTest.getRandomIntBelow(10)] += 1
 // console.log(nbOccurence)
+// }
+
+// test permutations
+// {
+// let randTest = new Random("test")
+// let nbNumber = 10
+// let nbOccurence = []
+// for (let idx = 0; idx < nbNumber; idx++)
+//     nbOccurence.push([...Array(10).fill(0)])
+// for (let ii = 0; ii < 10000; ii++) {
+//     let numbers = [...Array(nbNumber).keys()]
+//     randTest.permute(numbers)
+//     for (let idx = 0; idx < nbNumber; idx++)
+//         nbOccurence[idx][numbers[idx]]++
+// }
+// console.log(nbOccurence)
+// }
