@@ -11,9 +11,8 @@ const rand = new Random(Math.floor(Math.random() * 10000000000000).toString())
 
 const worldDim = [51, 51]
 const world = []
-const colors = [(237, 28, 36), (255, 127, 39), (255, 242, 0), (128, 255, 0), (0, 128, 0), (63, 72, 204), (153, 217, 234), (163, 73, 164), (255, 174, 201), (200, 191, 231)]
 const objectStates = null // (color => (chest, door))
-const keys = [0, 6, 1]
+const keys = new Set([0, 6, 1])
 
 const viewportDim = [20, 10]
 const playerPos = [15, 15]
@@ -35,11 +34,48 @@ class DoorCell {
     }
 
     toString() {
-        return
+        if (this.lockColors.length == 0)
+            return space
+        return `<span class="col${this.lockColors[0]}">${closedDoor}</span>`
+    }
+
+    getColors() {
+        return this.lockColors
     }
 
     open(iColor) {
-        this.lockColors
+        let colIdx = this.lockColors.indexOf(iColor)
+        if (colIdx < 0)
+            return false
+
+        this.lockColors.splice(colIdx)
+        return true
+    }
+}
+
+class ChestCell {
+    constructor(iKeyColor) {
+        this.keyColor = iKeyColor
+        this.isClosed = true
+    }
+
+    toString() {
+        if (this.isClosed)
+            return `<span class="col${this.keyColor}">${closedChest}</span>`
+        else
+            return `<span class="col${this.keyColor}">${openedChest}</span>`
+    }
+
+    getKeyColor() {
+        return this.keyColor
+    }
+
+    open() {
+        if (this.isClosed) {
+            this.isClosed = false
+            return true
+        }
+        return false
     }
 }
 
@@ -93,27 +129,18 @@ function buildWorld(iSeed) {
         world.push(line)
     }
 
-
-
     generateChests(iSeed)
     printWorld()
 }
 
 // #TODO Verify solvability (TU)
 function generateChests(iSeed) {
-
+    world[13][13] = new ChestCell(1)
+    world[10][13] = new DoorCell([1])
 }
 
 function isCoordsValid(iCoords) {
     return iCoords[0] >= 0 && iCoords[0] < worldDim[0] && iCoords[1] >= 0 && iCoords[1] < worldDim[1]
-}
-
-function openChest(iPos) {
-
-}
-
-function openDoor(iPos) {
-
 }
 
 function printWorld() {
@@ -196,15 +223,30 @@ function movePlayer(iDelta) {
 }
 
 function interact() {
-    for (const dir in allDir) {
-        let pos = [playerPos[0] + dir[0], playerPos[1] + dir[1]]
+    for (let dirIdx in allDir) {
+        let pos = [playerPos[0] + allDir[dirIdx][0], playerPos[1] + allDir[dirIdx][1]]
         if (isCoordsValid(pos)) {
             let cell = world[pos[1]][pos[0]]
-            switch (cell) {
-                case closedChest:
-                    openChest(pos)
-                case closedDoor:
-                    openDoor(pos)
+
+            if (cell instanceof DoorCell) {
+                doorColors = cell.getColors()
+                for (colIdx in doorColors) {
+                    let col = doorColors[colIdx]
+                    if (keys.has(col)) {
+                        cell.open(col)
+                        keys.delete(col)
+                        printWorld()
+                    }
+                }
+                break
+            }
+
+            if (cell instanceof ChestCell) {
+                if (cell.open()) {
+                    keys.add(cell.getKeyColor())
+                    printWorld()
+                }
+                break
             }
         }
     }

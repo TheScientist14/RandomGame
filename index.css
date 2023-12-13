@@ -28,7 +28,7 @@
 }
 
 .button-shortcut {
-    display:flex;
+    display: flex;
     margin-left: 30%;
     margin-right: 30%;
     font-weight: bold;
@@ -41,4 +41,44 @@
 
 #showHint {}
 
-#interact {}
+.interact {}
+
+.col0 {
+    color: rgb(237, 28, 36);
+}
+
+.col1 {
+    color: rgb(255, 127, 39);
+}
+
+.col2 {
+    color: rgb(255, 242, 0);
+}
+
+.col3 {
+    color: rgb(128, 255, 0);
+}
+
+.col4 {
+    color: rgb(0, 128, 0);
+}
+
+.col5 {
+    color: rgb(63, 72, 204);
+}
+
+.col6 {
+    color: rgb(153, 217, 234);
+}
+
+.col7 {
+    color: rgb(163, 73, 164);
+}
+
+.col8 {
+    color: rgb(255, 174, 201);
+}
+
+.col9 {
+    color: rgb(200, 191, 231);
+}
