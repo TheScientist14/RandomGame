@@ -139,6 +139,15 @@ function printWorld() {
     updateDisplayKeys()
 }
 
+function updateDisplayKeys() {
+    let textToDisplay = ""
+    for (const keyIndex in keys) {
+        textToDisplay += `<div class="col${keys[keyIndex]}">${key}</div>`
+    }
+    console.info(textToDisplay)
+    keysDisplay.innerHTML = textToDisplay
+}
+
 buildWorld()
 
 function processEvent(e) {
@@ -216,13 +225,4 @@ function readSeed() {
 function copySeed() {
     navigator.clipboard.writeText(rand.seedTxt);
     alert("Copied the seed");
-}
-
-function updateDisplayKeys() {
-    let textToDisplay = ""
-    for (const keyIndex in keys) {
-        textToDisplay += `<div class="col${keys[keyIndex]}">${key}</div>`
-    }
-    console.info(textToDisplay)
-    keysDisplay.innerHTML = textToDisplay
 }
