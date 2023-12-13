@@ -146,7 +146,7 @@ function buildWorld() {
     generateColorGraph()
     // console.log(colorGraph)
     generateDoors()
-    generateChests()
+    generateChest()
     world[endRoom[1][1]][endRoom[1][0]] = star
 
     printWorld()
@@ -174,7 +174,7 @@ function generateColorGraph() {
 }
 
 function placeDoor(iRoom, iRoomColor) {
-    console.log(iRoom)
+    //console.log(iRoom)
     let doorCoord = iRoom[0]
     let doorColors = colorGraph[iRoomColor]
     world[doorCoord[1]][doorCoord[0]] = new DoorCell(doorColors)
@@ -186,8 +186,8 @@ function generateDoors() {
     chestRoomToColor.splice(endColor, 1)
     rand.permute(chestRoomToColor)
 
-    console.log(colorGraph)
-    console.log(chestRoomToColor)
+    //console.log(colorGraph)
+    //console.log(chestRoomToColor)
 
     chestRooms.forEach((room, roomIdx) => {
         placeDoor(room, chestRoomToColor[roomIdx])
@@ -327,4 +327,67 @@ function readSeed() {
 function copySeed() {
     navigator.clipboard.writeText(rand.seedTxt);
     alert("Copied the seed");
+}
+
+function getDoorOrientation(iCoordDoor, iCoordRoom) {
+    let vectorX = iCoordDoor[0] - iCoordRoom[0]
+    let vectorY = iCoordDoor[1] - iCoordRoom[1]
+    let vectorLength = vectorX + vectorY
+
+    let vectorDir = [vectorX / vectorLength, vectorY / vectorLength]
+
+    return vectorDir
+}
+
+function generateChest() {
+    chestRoomToColor.length = 0
+    chestRoomToColor.push(...Array(nbColor).keys())
+    chestRoomToColor.splice(endColor, 1)
+    rand.permute(chestRoomToColor)
+
+    //console.log(colorGraph)
+    //console.log(chestRoomToColor)
+
+    chestRooms.forEach((room, roomIndex) => {
+        placeChest(room, chestRoomToColor[roomIndex])
+    })
+    placeChest(endRoom, endColor)
+
+
+}
+
+function placeChest(iRoom, iRoomColor) {
+    let roomCenterCoord = iRoom[1]
+    let chestColors = colorGraph[iRoomColor]
+    if (chestColors == null) return
+
+    let doorOrientation = getDoorOrientation(iRoom[0], iRoom[1])
+    console.log(doorOrientation)
+
+    switch (chestColors.length)
+    {
+        case 1:
+            world[roomCenterCoord[1]][roomCenterCoord[0]] = new ChestCell(chestColors[0])
+            console.log("case 1")
+            break;
+
+        case 2:
+            world[roomCenterCoord[1]+doorOrientation[0]][roomCenterCoord[0]-doorOrientation[1]] = new ChestCell(chestColors[0])
+            world[roomCenterCoord[1]-doorOrientation[0]][roomCenterCoord[0]+doorOrientation[1]] = new ChestCell(chestColors[1])
+
+            console.log("case 2")
+            break;
+
+        case 3: 
+            world[roomCenterCoord[1] + doorOrientation[0]][roomCenterCoord[0] - doorOrientation[1]] = new ChestCell(chestColors[0])
+            world[roomCenterCoord[1] - doorOrientation[0]][roomCenterCoord[0] + doorOrientation[1]] = new ChestCell(chestColors[1])
+            world[roomCenterCoord[1] - doorOrientation[1]][roomCenterCoord[0] - doorOrientation[0]] = new ChestCell(chestColors[2])
+            console.log("case 3")
+            break;
+
+        default:
+
+            console.log("default")
+            break;
+    }
 }

@@ -10,18 +10,55 @@
     caret-color: transparent;
 }
 
-.keyContainer {
+.inventoryContainer {
     display: flex;
+    flex-direction:column;
     font-family: monospace;
     font-weight: bold;
     border: solid 2px black;
-    margin-left: 10%;
-    margin-right: 10%;
+    margin-left: 30%;
+    margin-right: 30%;
     margin-top: 1%;
     margin-bottom: 1%;
-    justify-content: space-around;
     padding-top: 10px;
     padding-bottom: 10px;
+    align-items: center;
+}
+
+.inventoryTitle {
+    font-size:26px;
+    font-weight: bold;
+    margin-bottom:0.5%
+}
+
+hr{
+    border-top: solid 1px black;
+    width: 100%;
+}
+
+.keyContainer {
+    display: flex;
+    justify-content: space-between;
+    align-self:normal;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 24px;
+    margin-left: 20%;
+    margin-right: 20%;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#randomGame:focus {
+    caret-color: transparent;
+    border-radius: 2px;
+}
+
+.seedDisplay{
+    margin-left: 30%;
+    font-size: 22px;
 }
 
 .button-shortcut {
@@ -32,13 +69,21 @@
     justify-content: space-evenly;
 }
 
-#copySeed {}
+#copySeed {
+    font-size: 18px;
+}
 
-#pasteSeed {}
+#pasteSeed {
+    font-size: 18px;
+}
 
-#showHint {}
+#showHint {
+    font-size: 18px;
+}
 
-.interact {}
+#interact {
+    font-size: 18px;
+}
 
 .col0 {
     color: rgb(237, 28, 36);
