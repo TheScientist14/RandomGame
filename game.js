@@ -220,8 +220,8 @@ function copySeed() {
 
 function updateDisplayKeys() {
     let textToDisplay = ""
-    for (const keyVal in keys) {
-        textToDisplay += `<div class="col${keyVal}">${key}</div>`
+    for (const keyIndex in keys) {
+        textToDisplay += `<div class="col${keys[keyIndex]}">${key}</div>`
     }
     console.info(textToDisplay)
     keysDisplay.innerHTML = textToDisplay
