@@ -1,4 +1,8 @@
 const frame = document.getElementById("randomGame")
+const copyButton = document.getElementById("copySeed")
+const pasteButton = document.getElementById("pasteSeed")
+const hintButton = document.getElementById("showHint")
+const interactButton = document.getElementById("interact")
 const seedDisplay = document.getElementById("seed")
 
 const rand = new Random(Math.floor(Math.random() * 10000000000000).toString())
@@ -18,6 +22,11 @@ frame.addEventListener("keydown", processEvent);
 frame.addEventListener("cut", nope);
 frame.addEventListener("paste", nope);
 frame.addEventListener("input", nope);
+
+copyButton.addEventListener("click", copySeed);
+pasteButton.addEventListener("click", readSeed);
+hintButton.addEventListener("click", displayHint);
+interactButton.addEventListener("click", interact);
 
 function focusGame(e) {
     frame.focus()
