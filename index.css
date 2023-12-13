@@ -12,6 +12,8 @@
 
 .keyContainer {
     display: flex;
+    font-family: monospace;
+    font-weight: bold;
     border: solid 2px black;
     margin-left: 10%;
     margin-right: 10%;

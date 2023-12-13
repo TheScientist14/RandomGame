@@ -24,8 +24,8 @@ const wall = "█"
 const space = "."
 const player = "O"
 const closedDoor = "#"
-const openedChest = "∠"
-const closedChest = "Δ"
+const openedChest = "Λ"
+const closedChest = "A"
 const key = "ю"
 
 class DoorCell {
@@ -84,19 +84,14 @@ function nope(e) {
     return false
 }
 
-frame.addEventListener("keydown", processEvent);
-frame.addEventListener("cut", nope);
-frame.addEventListener("paste", nope);
-frame.addEventListener("input", nope);
+document.addEventListener("keydown", processEvent)
+document.addEventListener("copy", nope)
+document.addEventListener("paste", nope)
 
 copyButton.addEventListener("click", copySeed)
 pasteButton.addEventListener("click", readSeed)
 hintButton.addEventListener("click", displayHint)
 interactButton.addEventListener("click", interact)
-function focusGame(e) {
-    frame.focus()
-}
-focusGame()
 
 //#region world
 
@@ -168,17 +163,15 @@ function printWorld() {
 
 function updateDisplayKeys() {
     let textToDisplay = ""
-    for (const keyIndex in keys) {
-        textToDisplay += `<div class="col${keys[keyIndex]}">${key}</div>`
-    }
-    console.info(textToDisplay)
+    keys.forEach(keyVal => {
+        textToDisplay += `<div class="col${keyVal}">${key}</div>`
+    })
     keysDisplay.innerHTML = textToDisplay
 }
 
 buildWorld()
 
 function processEvent(e) {
-    e.preventDefault();
     switch (e.key) {
         case "ArrowDown":
             movePlayer([0, 1])
@@ -199,7 +192,8 @@ function processEvent(e) {
             displayHint()
             break
         case "v":
-            readSeed()
+            if (e.ctrlKey)
+                readSeed()
             break
         case "c":
             if (e.ctrlKey)
