@@ -9,18 +9,23 @@ const keysDisplay = document.getElementById("keyContainer")
 
 const rand = new Random(Math.floor(Math.random() * 10000000000000).toString())
 
-const allDir = [[1, 0], [0, -1], [-1, 0], [0, 1]]
-const allColors = [...Array(10).keys()];
+const up = [0, -1]
+const down = [0, 1]
+const left = [-1, 0]
+const right = [1, 0]
+const allDir = [right, up, left, down]
 
 const worldDim = [51, 51]
 const maxChestPerRoom = 3
-const nbColor = 10
+const nbColor = 13
+const allColors = [...Array(nbColor).keys()];
+
 const world = []
-const colorGraph = [...Array(nbColor).fill([])] // (color => colorDependencies)
+const colorGraph = [...Array(nbColor).fill([])] // (color => dependantColors)
 const chestRoomToColor = []
 var endColor = null
 var possibleSolution = null
-const keys = new Set()
+const keys = [] // key = (fromCol, toCol)
 
 // room = (door, center)
 const endRoom = [[25, 20], [25, 25]]
@@ -32,7 +37,7 @@ const chestRooms = [
 ]
 
 const viewportDim = [20, 10]
-const playerPos = [15, 15]
+const playerPos = [0, 0]
 
 const voidSpace = " "
 const wall = "█"
@@ -45,45 +50,58 @@ const key = "ю"
 const star = "*"
 
 class DoorCell {
-    constructor(iLockColors) {
+    constructor(iLockColors, iRoomColor) {
         this.lockColors = iLockColors
+        this.roomColor = iRoomColor
     }
 
     toString() {
-        if (this.lockColors == null || this.lockColors.length == 0)
-            return space
-        return `<span class="col${this.lockColors[0]}">${closedDoor}</span>`
+        if (this.isOpened())
+            return `<span class="col${this.roomColor}">${space}</span>`
+        return `<span class="col${this.lockColors[0]} otherCol${this.roomColor}">${closedDoor}</span>`
     }
 
-    getColors() {
+    getLockColors() {
         return this.lockColors
     }
 
-    open(iColor) {
-        let colIdx = this.lockColors.indexOf(iColor)
+    getRoomColor() {
+        return this.roomColor
+    }
+
+    open(iKeyColors) {
+        if (iKeyColors[1] != this.roomColor)
+            return false
+
+        let colIdx = this.lockColors.indexOf(iKeyColors[0])
         if (colIdx < 0)
             return false
 
-        this.lockColors.splice(colIdx)
+        this.lockColors.splice(colIdx, 1)
         return true
+    }
+
+    isOpened() {
+        return this.lockColors == null || this.lockColors.length == 0
     }
 }
 
 class ChestCell {
-    constructor(iKeyColor) {
+    constructor(iRoomColor, iKeyColor) {
+        this.roomColor = iRoomColor
         this.keyColor = iKeyColor
         this.isClosed = true
     }
 
     toString() {
         if (this.isClosed)
-            return `<span class="col${this.keyColor}">${closedChest}</span>`
+            return `<span class="col${this.roomColor} otherCol${this.keyColor}">${closedChest}</span>`
         else
-            return `<span class="col${this.keyColor}">${openedChest}</span>`
+            return `<span class="col${this.roomColor} otherCol${this.keyColor}">${openedChest}</span>`
     }
 
-    getKeyColor() {
-        return this.keyColor
+    getKeyColors() {
+        return [this.roomColor, this.keyColor]
     }
 
     open() {
@@ -92,6 +110,18 @@ class ChestCell {
             return true
         }
         return false
+    }
+}
+
+class SpaceCell {
+    constructor(iColor = null) {
+        this.color = iColor
+    }
+
+    toString() {
+        if (this.color == null)
+            return space
+        return `<span class="col${this.color}">${space}</span>`
     }
 }
 
@@ -111,17 +141,84 @@ interactButton.addEventListener("click", interact)
 
 //#region world
 
+function computeGraphCharacteristics() {
+    let seedBackup = rand.seedTxt
+
+    // min is nbColor factorial
+    let minSolution = 1
+    for (let ii = 0; ii < nbColor; ii++)
+        minSolution *= (ii + 1)
+    let maxSolution = 0
+    let sumSolution = 0
+    let solutionNumbers = []
+
+    const nbIter = 1000
+    const nbThermoStep = 20
+    const thermoStep = Math.trunc(nbIter / nbThermoStep)
+    let thermo = 0
+    let step = 0
+
+    console.log("Benchmarking nb of solutions:")
+    console.log("Nb of generations:", nbIter)
+
+    for (let ii = 0; ii < nbIter; ii++) {
+        thermo++
+        if (thermo >= thermoStep) {
+            thermo = 0
+            step++
+            console.log(`${step * 100 / nbThermoStep}%`)
+        }
+        generateColorGraph()
+        let nbSolutions = getAllSolutions().length
+        minSolution = Math.min(minSolution, nbSolutions)
+        maxSolution = Math.max(maxSolution, nbSolutions)
+        sumSolution += nbSolutions
+        solutionNumbers.push(nbSolutions)
+    }
+    console.log("Sorting...")
+    solutionNumbers.sort()
+    let medianIdx = Math.trunc(nbIter / 2)
+    let medianNbSolution = solutionNumbers[medianIdx]
+    if (nbIter % 2 == 0) {
+        medianNbSolution += solutionNumbers[medianIdx + 1]
+        medianNbSolution /= 2
+    }
+
+    let avgNbSolution = sumSolution / nbIter
+    let stdDevNbSolution = 0
+    solutionNumbers.forEach(nbSolution => stdDevNbSolution += (avgNbSolution - nbSolution) ** 2)
+    stdDevNbSolution /= nbIter
+    stdDevNbSolution = Math.sqrt(stdDevNbSolution)
+
+    console.log("min:", minSolution)
+    console.log("max:", maxSolution)
+    console.log("avg:", avgNbSolution)
+    console.log("med:", medianNbSolution)
+    console.log("stdDev:", stdDevNbSolution)
+
+    rand.setSeed(seedBackup)
+}
+
 function buildWorld() {
     world.length = 0
-    keys.clear()
+    keys.length = 0
+    playerPos[0] = 15
+    playerPos[1] = 15
 
     seedDisplay.textContent = '"' + rand.seedTxt + '"'
 
-    let roomWidth = Math.floor(worldDim[0] / 5)
-    let roomHeight = Math.floor(worldDim[1] / 5)
+    generateColorGraph()
+    let solutions = getAllSolutions()
+    console.log("Solutions number:", solutions.length)
+    mapColorsToRooms()
+
+    const nbRooms = 5
+    let roomWidth = Math.floor(worldDim[0] / nbRooms)
+    let roomHeight = Math.floor(worldDim[1] / nbRooms)
     for (let yy = 0; yy < worldDim[1]; yy++) {
         let line = []
         for (let xx = 0; xx < worldDim[0]; xx++) {
+            // vertical walls
             if (xx % roomWidth == 0) {
                 let wallX = xx / roomWidth
                 let wallY = yy / roomHeight
@@ -130,6 +227,7 @@ function buildWorld() {
                     continue
                 }
             }
+            // horizontal walls
             if (yy % roomHeight == 0) {
                 let wallX = xx / roomWidth
                 let wallY = yy / roomHeight
@@ -138,15 +236,49 @@ function buildWorld() {
                     continue
                 }
             }
-            line.push(space)
+            // corner rooms
+            if ((xx < roomWidth && yy < roomHeight)
+                || (xx > roomWidth * (nbRooms - 1) && yy < roomHeight)
+                || (xx < roomWidth && yy > roomHeight * (nbRooms - 1))
+                || (xx > roomWidth * (nbRooms - 1) && yy > roomHeight * (nbRooms - 1))
+            ) {
+                line.push(wall)
+                continue
+            }
+
+            let color = null
+            // coloredRooms
+            let nearestCenterIdx = -1
+            let isNearEnd = false
+            let minVect = [worldDim[0], worldDim[1]]
+            chestRooms.forEach((room, roomIdx) => {
+                let roomCenter = room[1]
+                let vect = [Math.abs(roomCenter[0] - xx), Math.abs(roomCenter[1] - yy)]
+                if (vect[0] + vect[1] < minVect[0] + minVect[1]) {
+                    minVect = vect
+                    nearestCenterIdx = roomIdx
+                }
+            })
+            let endRoomCenter = endRoom[1]
+            let vect = [Math.abs(endRoomCenter[0] - xx), Math.abs(endRoomCenter[1] - yy)]
+            if (vect[0] + vect[1] < minVect[0] + minVect[1]) {
+                minVect = vect
+                isNearEnd = true
+            }
+            if (minVect[0] < roomWidth / 2 && minVect[1] < roomHeight / 2) {
+                if (isNearEnd)
+                    color = endColor
+                else
+                    color = chestRoomToColor[nearestCenterIdx]
+            }
+
+            line.push(new SpaceCell(color))
         }
         world.push(line)
     }
 
-    generateColorGraph()
-    // console.log(colorGraph)
     generateDoors()
-    generateChest()
+    generateChests()
     world[endRoom[1][1]][endRoom[1][0]] = star
 
     printWorld()
@@ -155,50 +287,136 @@ function buildWorld() {
 function generateColorGraph() {
     let orderedColors = [...allColors]
     rand.permute(orderedColors)
-    // console.log(orderedColors)
 
     orderedColors.forEach((col, colIdx) => {
         let dependencyCandidates = orderedColors.slice(colIdx + 1)
-        let dependencies = []
+        let dependants = []
         let nbDependencies = rand.getRandomIntBetween(Math.min(1, dependencyCandidates.length), Math.min(dependencyCandidates.length, maxChestPerRoom) + 1)
         for (let dependencyIdx = 0; dependencyIdx < nbDependencies; dependencyIdx++)
-            if (dependencyIdx == 0)
-                dependencies.push(dependencyCandidates.splice(0, 1)[0])
-            else
-                dependencies.push(rand.popRandomArray(dependencyCandidates))
-        colorGraph[col] = dependencies
+            dependants.push(rand.popRandomArray(dependencyCandidates))
+
+        colorGraph[col] = dependants
     })
-    endColor = orderedColors[0]
-    orderedColors.reverse()
+    endColor = orderedColors[nbColor - 1]
     possibleSolution = orderedColors
 }
 
-function placeDoor(iRoom, iRoomColor) {
-    //console.log(iRoom)
-    let doorCoord = iRoom[0]
-    let doorColors = colorGraph[iRoomColor]
-    world[doorCoord[1]][doorCoord[0]] = new DoorCell(doorColors)
+function reverseGraph(iGraph) {
+    let reversedGraph = []
+    for (_ in iGraph)
+        reversedGraph.push([])
+
+    for (idx in iGraph) {
+        let links = iGraph[idx]
+        for (linkIdx in links)
+            reversedGraph[links[linkIdx]].push(Number(idx))
+    }
+
+    return reversedGraph
 }
 
-function generateDoors() {
+function getAccessibleUnvisitedNodes(iGraph, iVisitedNodes) {
+    let accessibleNodes = []
+    iGraph.forEach((dependancies, node) => {
+        if (iVisitedNodes.includes(node))
+            return
+        let isAvailable = true
+        dependancies.forEach(dependancy => {
+            if (!iVisitedNodes.includes(dependancy))
+                isAvailable = false
+        })
+        if (isAvailable)
+            accessibleNodes.push(node)
+    })
+    return accessibleNodes
+}
+
+function getAllSolutions() {
+    let solutions = []
+    let depenciesGraph = reverseGraph(colorGraph)
+
+    let stack = [[]]
+    while (stack.length > 0) {
+        let visitedNodes = stack.pop()
+
+        if (visitedNodes.includes(endColor)) {
+            solutions.push(visitedNodes.join(";"))
+            if (visitedNodes.length != nbColor)
+                console.warning("A solution that does not require all nodes has been found:", visitedNodes)
+            continue
+        }
+
+        let availableNodes = getAccessibleUnvisitedNodes(depenciesGraph, visitedNodes)
+        availableNodes.forEach(nodeToVisit => {
+            let nextVisited = visitedNodes.map(x => x)
+            nextVisited.push(nodeToVisit)
+            stack.push(nextVisited)
+        })
+    }
+
+    return solutions
+}
+
+function mapColorsToRooms() {
     chestRoomToColor.length = 0
     chestRoomToColor.push(...Array(nbColor).keys())
     chestRoomToColor.splice(endColor, 1)
     rand.permute(chestRoomToColor)
+}
 
-    //console.log(colorGraph)
-    //console.log(chestRoomToColor)
+function placeDoor(iRoom, iRoomColor) {
+    let doorCoord = iRoom[0]
+    let lockColors = []
+    colorGraph.forEach((dependants, colIdx) => {
+        if (dependants.includes(iRoomColor)) lockColors.push(colIdx)
+    })
+    world[doorCoord[1]][doorCoord[0]] = new DoorCell(lockColors, iRoomColor)
+}
 
+function generateDoors() {
     chestRooms.forEach((room, roomIdx) => {
         placeDoor(room, chestRoomToColor[roomIdx])
     })
     placeDoor(endRoom, endColor)
 }
 
-// #TODO Verify solvability (TU)
+function getDoorOrientation(iCoordDoor, iCoordRoom) {
+    let vectorX = iCoordDoor[0] - iCoordRoom[0]
+    let vectorY = iCoordDoor[1] - iCoordRoom[1]
+    let vectorLength = Math.abs(vectorX) + Math.abs(vectorY)
+
+    let vectorDir = [vectorX / vectorLength, vectorY / vectorLength]
+
+    return vectorDir
+}
+
 function generateChests() {
-    world[13][13] = new ChestCell(1)
-    world[10][13] = new DoorCell([1])
+    chestRooms.forEach((room, roomIndex) => {
+        placeChest(room, chestRoomToColor[roomIndex])
+    })
+}
+
+function placeChest(iRoom, iRoomColor) {
+    let roomCenterCoord = iRoom[1]
+    let chestColors = colorGraph[iRoomColor]
+    if (chestColors == null) return
+
+    let doorOrientation = getDoorOrientation(iRoom[0], iRoom[1])
+
+    switch (chestColors.length) {
+        case 1:
+            world[roomCenterCoord[1]][roomCenterCoord[0]] = new ChestCell(iRoomColor, chestColors[0])
+            break
+        case 2:
+            world[roomCenterCoord[1] + doorOrientation[0]][roomCenterCoord[0] - doorOrientation[1]] = new ChestCell(iRoomColor, chestColors[0])
+            world[roomCenterCoord[1] - doorOrientation[0]][roomCenterCoord[0] + doorOrientation[1]] = new ChestCell(iRoomColor, chestColors[1])
+            break
+        case 3:
+            world[roomCenterCoord[1] + doorOrientation[0]][roomCenterCoord[0] - doorOrientation[1]] = new ChestCell(iRoomColor, chestColors[0])
+            world[roomCenterCoord[1] - doorOrientation[0]][roomCenterCoord[0] + doorOrientation[1]] = new ChestCell(iRoomColor, chestColors[1])
+            world[roomCenterCoord[1] - doorOrientation[1]][roomCenterCoord[0] - doorOrientation[0]] = new ChestCell(iRoomColor, chestColors[2])
+            break
+    }
 }
 
 function isCoordsValid(iCoords) {
@@ -230,27 +448,28 @@ function printWorld() {
 
 function updateDisplayKeys() {
     let textToDisplay = " "
-    keys.forEach(keyVal => {
-        textToDisplay += `<div class="col${keyVal}">${key}</div>`
+    keys.forEach(keyCols => {
+        textToDisplay += `<div class="col${keyCols[0]} otherCol${keyCols[1]}">${key}</div>`
     })
     keysDisplay.innerHTML = textToDisplay
 }
 
+// computeGraphCharacteristics()
 buildWorld()
 
 function processEvent(e) {
     switch (e.key) {
         case "ArrowDown":
-            movePlayer([0, 1])
+            movePlayer(down)
             break
         case "ArrowUp":
-            movePlayer([0, -1])
+            movePlayer(up)
             break
         case "ArrowLeft":
-            movePlayer([-1, 0])
+            movePlayer(left)
             break
         case "ArrowRight":
-            movePlayer([1, 0])
+            movePlayer(right)
             break
         case "e":
             interact()
@@ -266,7 +485,10 @@ function processEvent(e) {
             if (e.ctrlKey)
                 copySeed()
             break
+        default:
+            return
     }
+    e.preventDefault()
 }
 
 function movePlayer(iDelta) {
@@ -274,13 +496,24 @@ function movePlayer(iDelta) {
     if (!isCoordsValid(tmpPlayerPos))
         return false
 
-    if (world[tmpPlayerPos[1]][tmpPlayerPos[0]] == space) {
-        playerPos[0] = tmpPlayerPos[0]
-        playerPos[1] = tmpPlayerPos[1]
-        printWorld()
-        return true
+    let canMove = false
+    let cell = world[tmpPlayerPos[1]][tmpPlayerPos[0]]
+
+    if (cell instanceof SpaceCell)
+        canMove = true
+
+    if (cell instanceof DoorCell) {
+        if (cell.isOpened())
+            canMove = true
     }
-    return false
+
+    if (!canMove)
+        return false
+
+    playerPos[0] = tmpPlayerPos[0]
+    playerPos[1] = tmpPlayerPos[1]
+    printWorld()
+    return true
 }
 
 function interact() {
@@ -290,23 +523,36 @@ function interact() {
             let cell = world[pos[1]][pos[0]]
 
             if (cell instanceof DoorCell) {
-                doorColors = cell.getColors()
-                for (colIdx in doorColors) {
-                    let col = doorColors[colIdx]
-                    if (keys.has(col)) {
-                        cell.open(col)
-                        printWorld()
-                    }
-                }
-                break
+                let lockColor = cell.getLockColors()[0]
+                let roomColor = cell.getRoomColor()
+
+                let keyIdx = -1
+                keys.forEach((key, idx) => {
+                    if (key[0] == lockColor && key[1] == roomColor)
+                        keyIdx = idx
+                })
+                if (keyIdx < 0)
+                    continue
+                if (!cell.open([lockColor, roomColor]))
+                    continue
+
+                keys.splice(keyIdx, 1)
+                printWorld()
+                return
             }
 
             if (cell instanceof ChestCell) {
-                if (cell.open()) {
-                    keys.add(cell.getKeyColor())
-                    printWorld()
-                }
-                break
+                if (!cell.open())
+                    continue
+                keys.push(cell.getKeyColors())
+                printWorld()
+                return
+            }
+
+            if (cell == star) {
+                alert("You won!\nRestart?")
+                rand.setSeed(Math.floor(Math.random() * 10000000000000).toString())
+                buildWorld()
             }
         }
     }
@@ -327,67 +573,4 @@ function readSeed() {
 function copySeed() {
     navigator.clipboard.writeText(rand.seedTxt);
     alert("Copied the seed");
-}
-
-function getDoorOrientation(iCoordDoor, iCoordRoom) {
-    let vectorX = iCoordDoor[0] - iCoordRoom[0]
-    let vectorY = iCoordDoor[1] - iCoordRoom[1]
-    let vectorLength = vectorX + vectorY
-
-    let vectorDir = [vectorX / vectorLength, vectorY / vectorLength]
-
-    return vectorDir
-}
-
-function generateChest() {
-    chestRoomToColor.length = 0
-    chestRoomToColor.push(...Array(nbColor).keys())
-    chestRoomToColor.splice(endColor, 1)
-    rand.permute(chestRoomToColor)
-
-    //console.log(colorGraph)
-    //console.log(chestRoomToColor)
-
-    chestRooms.forEach((room, roomIndex) => {
-        placeChest(room, chestRoomToColor[roomIndex])
-    })
-    placeChest(endRoom, endColor)
-
-
-}
-
-function placeChest(iRoom, iRoomColor) {
-    let roomCenterCoord = iRoom[1]
-    let chestColors = colorGraph[iRoomColor]
-    if (chestColors == null) return
-
-    let doorOrientation = getDoorOrientation(iRoom[0], iRoom[1])
-    console.log(doorOrientation)
-
-    switch (chestColors.length)
-    {
-        case 1:
-            world[roomCenterCoord[1]][roomCenterCoord[0]] = new ChestCell(chestColors[0])
-            console.log("case 1")
-            break;
-
-        case 2:
-            world[roomCenterCoord[1]+doorOrientation[0]][roomCenterCoord[0]-doorOrientation[1]] = new ChestCell(chestColors[0])
-            world[roomCenterCoord[1]-doorOrientation[0]][roomCenterCoord[0]+doorOrientation[1]] = new ChestCell(chestColors[1])
-
-            console.log("case 2")
-            break;
-
-        case 3: 
-            world[roomCenterCoord[1] + doorOrientation[0]][roomCenterCoord[0] - doorOrientation[1]] = new ChestCell(chestColors[0])
-            world[roomCenterCoord[1] - doorOrientation[0]][roomCenterCoord[0] + doorOrientation[1]] = new ChestCell(chestColors[1])
-            world[roomCenterCoord[1] - doorOrientation[1]][roomCenterCoord[0] - doorOrientation[0]] = new ChestCell(chestColors[2])
-            console.log("case 3")
-            break;
-
-        default:
-
-            console.log("default")
-            break;
-    }
 }
