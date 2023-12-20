@@ -1,0 +1,81 @@
+Minimum théorique pour n nodes : 1
+Maximum théorique pour n nodes : n-1
+Moyenne thérorique pour n nodes : ?
+Médiane théorique pour n nodes : ?
+Écart-type théorique pour n nodes : ?
+
+
+Computed over 10000 random graph for each number of nodes
+
+For 13 nodes:
+	min: 3
+	max: 4989600
+	avg: 49744.6546
+	med: 17472
+	stdDev: 145505.54642903293
+For 12 nodes:
+	min: 3
+	max: 798336
+	avg: 10194.5866
+	med: 17187
+	stdDev: 27719.571482573443
+For 11 nodes:
+	min: 2
+	max: 107280
+	avg: 2391.21
+	med: 1714
+	stdDev: 5243.258512671294
+For 10 nodes:
+	min: 1
+	max: 20160
+	avg: 591.6114
+	med: 31
+	stdDev: 1140.5217505992712
+For 9 nodes:
+	min: 1
+	max: 6720
+	avg: 165.8615
+	med: 31
+	stdDev: 286.64069201310343
+For 8 nodes:
+	min: 1
+	max: 1680
+	avg: 52.1581
+	med: 30
+	stdDev: 75.55386756738494
+For 7 nodes:
+	min: 1
+	max: 360
+	avg: 18.1749
+	med: 3
+	stdDev: 22.93441322532463
+For 6 nodes:
+	min: 1
+	max: 60
+	avg: 7.0943
+	med: 3
+	stdDev: 7.145824480772092
+For 5 nodes:
+	min: 1
+	max: 24
+	avg: 3.2562
+	med: 2
+	stdDev: 2.558781264586616
+For 4 nodes:
+	min: 1
+	max: 6
+	avg: 1.8015
+	med: 1
+	stdDev: 1.0473288643019685
+For 3 nodes:
+	min: 1
+	max: 2
+	avg: 1.2439
+	med: 1
+	stdDev: 0.4294331030556306
+For 2 nodes:
+	min: 1
+	max: 1
+	avg: 1
+	med: 1
+	stdDev: 0

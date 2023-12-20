@@ -5,19 +5,16 @@ button{
 #randomGame {
     font-family: monospace;
     width: max-content;
-    font-size: 2.5em;
+    font-size: 2em;
+    border: solid 2px black;
     /* centering */
     margin-left: auto;
     margin-right: auto;
-    border: solid 2px black;
-    border-radius: 2px;
-    font-stretch: expanded;
-    caret-color: transparent;
 }
 
 .inventoryContainer {
     display: flex;
-    flex-direction:column;
+    flex-direction: column;
     font-family: monospace;
     font-weight: bold;
     border: solid 2px black;
@@ -31,12 +28,12 @@ button{
 }
 
 .inventoryTitle {
-    font-size:26px;
+    font-size: 26px;
     font-weight: bold;
-    margin-bottom:0.5%
+    margin-bottom: 0.5%
 }
 
-hr{
+hr {
     border-top: solid 1px black;
     width: 100%;
 }
@@ -44,7 +41,7 @@ hr{
 .keyContainer {
     display: flex;
     justify-content: space-between;
-    align-self:normal;
+    align-self: normal;
     font-family: monospace;
     font-weight: bold;
     font-size: 24px;
@@ -61,7 +58,7 @@ hr{
     border-radius: 2px;
 }
 
-.seedDisplay{
+.seedDisplay {
     margin-left: 30%;
     font-size: 22px;
 }
@@ -91,6 +88,23 @@ hr{
     font-weight: bold;
     width: 30px;
     height : 100px
+}
+
+#hintDisplay {
+    font-size: 2em;
+    display: block;
+    width: 100%;
+    position: fixed;
+    text-align: right;
+    height: 3em;
+    top: 50px;
+    right: 50px;
+    opacity: 1;
+}
+
+.fadeOut {
+    opacity: 0 !important;
+    transition: opacity 1s ease-in-out 4s;
 }
 
 .col0 {

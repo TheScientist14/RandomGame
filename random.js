@@ -20,11 +20,6 @@ class Random {
         return iArray.splice(idx, 1)[0]
     }
 
-    popRandomArray(iArray) {
-        let idx = this.getRandomIntBelow(iArray.length)
-        return iArray.splice(idx, 1)[0]
-    }
-
     permute(iArray) {
         for (let ii = 0; ii < iArray.length - 1; ii++) { // last one can only permutate with itself
             let permutatedIdx = this.getRandomIntBetween(ii, iArray.length)

@@ -1,11 +1,15 @@
 const frame = document.getElementById("randomGame")
-const body = document.getElementsByClassName("body")
+const body = document.getElementsByName("body")
 const copyButton = document.getElementById("copySeed")
 const pasteButton = document.getElementById("pasteSeed")
 const hintButton = document.getElementById("showHint")
 const interactButton = document.getElementById("interact")
 const seedDisplay = document.getElementById("seed")
 const keysDisplay = document.getElementById("keyContainer")
+const hintDisplay = document.getElementById("hintDisplay")
+const decrNbColor = document.getElementById("decrNbColor")
+const incrNbColor = document.getElementById("incrNbColor")
+const nbColorDisplay = document.getElementById("nbColorDisplay")
 
 const rand = new Random(Math.floor(Math.random() * 10000000000000).toString())
 
@@ -17,7 +21,7 @@ const allDir = [right, up, left, down]
 
 const worldDim = [51, 51]
 const maxChestPerRoom = 3
-const nbColor = 13
+var nbColor = 13
 const allColors = [...Array(nbColor).keys()];
 
 const world = []
@@ -26,6 +30,7 @@ const chestRoomToColor = []
 var endColor = null
 var possibleSolution = null
 const keys = [] // key = (fromCol, toCol)
+const ownedKeys = []
 
 // room = (door, center)
 const endRoom = [[25, 20], [25, 25]]
@@ -130,6 +135,24 @@ function nope(e) {
     return false
 }
 
+function updateNbColor(iDelta) {
+    let prevNbColor = nbColor
+    nbColor = Math.max(1, Math.min(13, nbColor + iDelta))
+    if (nbColor == prevNbColor)
+        return false
+    nbColorDisplay.innerHTML = nbColor
+    let realDelta = nbColor - prevNbColor
+    allColors.length = 0
+    colorGraph.length = 0
+    for (let ii = 0; ii < nbColor; ii++) {
+        allColors.push(ii)
+        colorGraph.push([])
+    }
+    console.log(colorGraph)
+    buildWorld()
+    return true
+}
+
 document.addEventListener("keydown", processEvent)
 document.addEventListener("copy", nope)
 document.addEventListener("paste", nope)
@@ -138,63 +161,79 @@ copyButton.addEventListener("click", copySeed)
 pasteButton.addEventListener("click", readSeed)
 hintButton.addEventListener("click", displayHint)
 interactButton.addEventListener("click", interact)
+decrNbColor.addEventListener("click", function (e) { updateNbColor(-1) })
+incrNbColor.addEventListener("click", function (e) { updateNbColor(1) })
 
 //#region world
 
 function computeGraphCharacteristics() {
     let seedBackup = rand.seedTxt
 
-    // min is nbColor factorial
-    let minSolution = 1
-    for (let ii = 0; ii < nbColor; ii++)
-        minSolution *= (ii + 1)
-    let maxSolution = 0
-    let sumSolution = 0
-    let solutionNumbers = []
+    results = []
 
-    const nbIter = 1000
-    const nbThermoStep = 20
-    const thermoStep = Math.trunc(nbIter / nbThermoStep)
-    let thermo = 0
-    let step = 0
+    for (let ii = 0; ii < 12; ii++) {
 
-    console.log("Benchmarking nb of solutions:")
-    console.log("Nb of generations:", nbIter)
+        // min is nbColor factorial
+        let minSolution = 1
+        for (let ii = 0; ii < nbColor; ii++)
+            minSolution *= (ii + 1)
+        let maxSolution = 0
+        let sumSolution = 0
+        let solutionNumbers = []
 
-    for (let ii = 0; ii < nbIter; ii++) {
-        thermo++
-        if (thermo >= thermoStep) {
-            thermo = 0
-            step++
-            console.log(`${step * 100 / nbThermoStep}%`)
+        const nbIter = 100
+        const nbThermoStep = 100
+        const thermoStep = Math.trunc(nbIter / nbThermoStep)
+        let thermo = 0
+        let step = 0
+
+        console.log(`Benchmarking nb of solutions for ${nbColor} nodes:`)
+        console.log("Nb of generations:", nbIter)
+
+        for (let ii = 0; ii < nbIter; ii++) {
+            thermo++
+            if (thermo >= thermoStep) {
+                thermo = 0
+                step++
+                console.log(`${step * 100 / nbThermoStep}%`)
+            }
+            generateColorGraph()
+            let nbSolutions = getAllSolutions().length
+            minSolution = Math.min(minSolution, nbSolutions)
+            maxSolution = Math.max(maxSolution, nbSolutions)
+            sumSolution += nbSolutions
+            solutionNumbers.push(nbSolutions)
         }
-        generateColorGraph()
-        let nbSolutions = getAllSolutions().length
-        minSolution = Math.min(minSolution, nbSolutions)
-        maxSolution = Math.max(maxSolution, nbSolutions)
-        sumSolution += nbSolutions
-        solutionNumbers.push(nbSolutions)
-    }
-    console.log("Sorting...")
-    solutionNumbers.sort()
-    let medianIdx = Math.trunc(nbIter / 2)
-    let medianNbSolution = solutionNumbers[medianIdx]
-    if (nbIter % 2 == 0) {
-        medianNbSolution += solutionNumbers[medianIdx + 1]
-        medianNbSolution /= 2
+        console.log("Sorting...")
+        solutionNumbers.sort()
+        let medianIdx = Math.trunc(nbIter / 2)
+        let medianNbSolution = solutionNumbers[medianIdx]
+        if (nbIter % 2 == 0) {
+            medianNbSolution += solutionNumbers[medianIdx + 1]
+            medianNbSolution /= 2
+        }
+
+        let avgNbSolution = sumSolution / nbIter
+        let stdDevNbSolution = 0
+        solutionNumbers.forEach(nbSolution => stdDevNbSolution += (avgNbSolution - nbSolution) ** 2)
+        stdDevNbSolution /= nbIter
+        stdDevNbSolution = Math.sqrt(stdDevNbSolution)
+
+        results.push([nbColor, [minSolution, maxSolution, avgNbSolution, medianNbSolution, stdDevNbSolution]])
+
+        updateNbColor(-1)
     }
 
-    let avgNbSolution = sumSolution / nbIter
-    let stdDevNbSolution = 0
-    solutionNumbers.forEach(nbSolution => stdDevNbSolution += (avgNbSolution - nbSolution) ** 2)
-    stdDevNbSolution /= nbIter
-    stdDevNbSolution = Math.sqrt(stdDevNbSolution)
+    console.log("---------------\nResults:")
+    resTxt = ""
+    labels = ["min", "max", "avg", "med", "stdDev"]
+    results.forEach(res => {
+        resTxt += `For ${res[0]} nodes:\n`
+        res[1].forEach((val, idx) => resTxt += `\t${labels[idx]}: ${val}\n`)
+    })
+    console.log(resTxt)
 
-    console.log("min:", minSolution)
-    console.log("max:", maxSolution)
-    console.log("avg:", avgNbSolution)
-    console.log("med:", medianNbSolution)
-    console.log("stdDev:", stdDevNbSolution)
+    updateNbColor(12)
 
     rand.setSeed(seedBackup)
 }
@@ -202,6 +241,9 @@ function computeGraphCharacteristics() {
 function buildWorld() {
     world.length = 0
     keys.length = 0
+    ownedKeys.length = 0
+    for (let ii = 0; ii < nbColor; ii++)
+        ownedKeys.push([])
     playerPos[0] = 15
     playerPos[1] = 15
 
@@ -342,7 +384,7 @@ function getAllSolutions() {
         if (visitedNodes.includes(endColor)) {
             solutions.push(visitedNodes.join(";"))
             if (visitedNodes.length != nbColor)
-                console.warning("A solution that does not require all nodes has been found:", visitedNodes)
+                console.warn("A solution that does not require all nodes has been found:", visitedNodes)
             continue
         }
 
@@ -359,7 +401,7 @@ function getAllSolutions() {
 
 function mapColorsToRooms() {
     chestRoomToColor.length = 0
-    chestRoomToColor.push(...Array(nbColor).keys())
+    chestRoomToColor.push(...Array(chestRooms.length + 1).keys())
     chestRoomToColor.splice(endColor, 1)
     rand.permute(chestRoomToColor)
 }
@@ -544,7 +586,9 @@ function interact() {
             if (cell instanceof ChestCell) {
                 if (!cell.open())
                     continue
-                keys.push(cell.getKeyColors())
+                let key = cell.getKeyColors()
+                keys.push(key)
+                ownedKeys[key[0]].push(key[1])
                 printWorld()
                 return
             }
@@ -559,7 +603,23 @@ function interact() {
 }
 
 function displayHint() {
-
+    for (let solColIdx in possibleSolution) {
+        let isFullyVisited = true
+        let col = possibleSolution[solColIdx]
+        for (let dependantIdx in colorGraph[col]) {
+            if (!ownedKeys[col].includes(colorGraph[col][dependantIdx])) {
+                isFullyVisited = false
+                break
+            }
+        }
+        if (!isFullyVisited || col == endColor) {
+            hintDisplay.innerHTML = `Try to go to <span class="col${col}">this color</span>`
+            // trigger again the fade out
+            hintDisplay.classList.remove("fadeOut")
+            setTimeout(function () { hintDisplay.classList.add("fadeOut") }, 1)
+            break
+        }
+    }
 }
 
 function readSeed() {
