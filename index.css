@@ -1,3 +1,7 @@
+button{
+    font-size: 22px;
+}
+
 #randomGame {
     font-family: monospace;
     width: max-content;
@@ -70,20 +74,23 @@ hr{
     justify-content: space-evenly;
 }
 
-#copySeed {
-    font-size: 18px;
+#nbColorDisplay{
+    font-size: 22px;
+    align-self: center;
+    margin-left:5px;
+    margin-right:5px;
 }
 
-#pasteSeed {
-    font-size: 18px;
+#decrNbColor{
+    font-weight: bold;
+    width: 30px;
+    height : 100px;
 }
 
-#showHint {
-    font-size: 18px;
-}
-
-#interact {
-    font-size: 18px;
+#incrNbColor {
+    font-weight: bold;
+    width: 30px;
+    height : 100px
 }
 
 .col0 {
