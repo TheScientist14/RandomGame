@@ -3,6 +3,7 @@ const body = document.getElementsByName("body")
 const copyButton = document.getElementById("copySeed")
 const pasteButton = document.getElementById("pasteSeed")
 const hintButton = document.getElementById("showHint")
+const solutionsButton = document.getElementById("showSolutions")
 const interactButton = document.getElementById("interact")
 const seedDisplay = document.getElementById("seed")
 const keysDisplay = document.getElementById("keyContainer")
@@ -10,6 +11,7 @@ const hintDisplay = document.getElementById("hintDisplay")
 const decrNbColor = document.getElementById("decrNbColor")
 const incrNbColor = document.getElementById("incrNbColor")
 const nbColorDisplay = document.getElementById("nbColorDisplay")
+const solutionsDisplay = document.getElementById("solutionsDisplay")
 
 const rand = new Random(Math.floor(Math.random() * 10000000000000).toString())
 
@@ -29,6 +31,7 @@ const colorGraph = [...Array(nbColor).fill([])] // (color => dependantColors)
 const chestRoomToColor = []
 var endColor = null
 var possibleSolution = null
+var solutions = []
 const keys = [] // key = (fromCol, toCol)
 const ownedKeys = []
 
@@ -141,7 +144,6 @@ function updateNbColor(iDelta) {
     if (nbColor == prevNbColor)
         return false
     nbColorDisplay.innerHTML = nbColor
-    let realDelta = nbColor - prevNbColor
     allColors.length = 0
     colorGraph.length = 0
     for (let ii = 0; ii < nbColor; ii++) {
@@ -160,6 +162,7 @@ document.addEventListener("paste", nope)
 copyButton.addEventListener("click", copySeed)
 pasteButton.addEventListener("click", readSeed)
 hintButton.addEventListener("click", displayHint)
+solutionsButton.addEventListener("click", toggleAllSolutions)
 interactButton.addEventListener("click", interact)
 decrNbColor.addEventListener("click", function (e) { updateNbColor(-1) })
 incrNbColor.addEventListener("click", function (e) { updateNbColor(1) })
@@ -250,8 +253,9 @@ function buildWorld() {
     seedDisplay.textContent = '"' + rand.seedTxt + '"'
 
     generateColorGraph()
-    let solutions = getAllSolutions()
+    solutions = getAllSolutions()
     console.log("Solutions number:", solutions.length)
+    solutionsDisplay.innerText = "All solutions:\n" + solutions.join("\n")
     mapColorsToRooms()
 
     const nbRooms = 5
@@ -527,6 +531,8 @@ function processEvent(e) {
             if (e.ctrlKey)
                 copySeed()
             break
+        case "a":
+            toggleAllSolutions()
         default:
             return
     }
@@ -633,4 +639,8 @@ function readSeed() {
 function copySeed() {
     navigator.clipboard.writeText(rand.seedTxt);
     alert("Copied the seed");
+}
+
+function toggleAllSolutions() {
+    solutionsDisplay.style.display = (solutionsDisplay.style.display === "none") ? "block" : "none"
 }

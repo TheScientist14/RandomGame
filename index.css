@@ -1,4 +1,4 @@
-button{
+button {
     font-size: 22px;
 }
 
@@ -71,23 +71,23 @@ hr {
     justify-content: space-evenly;
 }
 
-#nbColorDisplay{
+#nbColorDisplay {
     font-size: 22px;
     align-self: center;
-    margin-left:5px;
-    margin-right:5px;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
-#decrNbColor{
+#decrNbColor {
     font-weight: bold;
     width: 30px;
-    height : 100px;
+    height: 100px;
 }
 
 #incrNbColor {
     font-weight: bold;
     width: 30px;
-    height : 100px
+    height: 100px
 }
 
 #hintDisplay {
@@ -100,6 +100,12 @@ hr {
     top: 50px;
     right: 50px;
     opacity: 1;
+}
+
+#solutionsDisplay {
+    display: none;
+    max-height: 50vh;
+    overflow: scroll;
 }
 
 .fadeOut {
